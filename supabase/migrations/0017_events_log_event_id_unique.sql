@@ -1,0 +1,12 @@
+-- event_id já era pensado como identificador único de um evento real (é a
+-- própria chave de dedup do Meta CAPI) mas nunca teve constraint de unicidade
+-- no banco — não dava problema porque eventos do navegador usam um UUID novo
+-- por disparo e o Purchase do webhook Guru é protegido a montante pela unique
+-- de purchases.guru_transaction_id. O webhook de Lead do GHL (event_id
+-- determinístico por contact_id) expôs a lacuna: dois envios concorrentes
+-- (reenvio do Workflow, ou requests próximos) faziam a checagem de
+-- idempotência (SELECT) passar duas vezes antes do INSERT de verdade
+-- acontecer (em background, via waitUntil), duplicando a linha e re-enviando
+-- pro Meta/GA4. A unique index resolve na raiz: o segundo INSERT concorrente
+-- falha com unique_violation em vez de silenciosamente duplicar.
+create unique index if not exists idx_events_log_event_id_unique on events_log (event_id);
