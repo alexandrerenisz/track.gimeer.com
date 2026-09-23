@@ -9,6 +9,9 @@ import { dispatchEvent } from "@/lib/tracking/dispatch-event";
 import { hashEmail, hashPhone } from "@/lib/meta/hashing";
 import { splitName } from "@/lib/tracking/split-name";
 import { isMetaBotOrProxy } from "@/lib/tracking/meta-bot";
+import type { Database } from "@/lib/types/database";
+
+type VisitorUpdate = Database["public"]["Tables"]["visitors"]["Update"];
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPreflight(request);
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
   // evento com fbp/fbc "cura" o buraco que o identify deixou na linha do
   // visitante, sem depender de acertar timing no navegador.
   if (visitor && ((input.fbp && !visitor.fbp) || (input.fbc && !visitor.fbc))) {
-    const patch: Record<string, string> = {};
+    const patch: VisitorUpdate = {};
     if (input.fbp && !visitor.fbp) patch.fbp = input.fbp;
     if (input.fbc && !visitor.fbc) patch.fbc = input.fbc;
     await admin.from("visitors").update(patch).eq("id", visitor.id);
@@ -77,7 +80,7 @@ export async function POST(request: NextRequest) {
   // (mesma filosofia do /api/identify: o dado mais recente informado pelo
   // próprio visitante é o que vale).
   if (visitor && (input.email || input.phone || input.name)) {
-    const identityPatch: Record<string, string> = {};
+    const identityPatch: VisitorUpdate = {};
     if (input.email) {
       identityPatch.email = input.email;
       identityPatch.email_hash = hashEmail(input.email);

@@ -5,6 +5,7 @@ import { getSettings } from "@/lib/config/settings";
 import { sendMetaEvents, type MetaEvent } from "@/lib/meta/capi";
 import { sendGa4Event } from "@/lib/ga4/measurement-protocol";
 import { hashEmail, hashPhone, sha256Lower } from "@/lib/meta/hashing";
+import type { Json } from "@/lib/types/database";
 
 /** Estado por extenso -> sigla ANSI de 2 letras (Meta recomenda a sigla pra
  * "st"; sem isso o hash de "Paraná" nunca bate com o hash de "PR" que outra
@@ -72,10 +73,10 @@ export type DispatchInput = {
 };
 
 export type DispatchResult = {
-  payloadMeta: unknown[];
-  responseMeta: unknown[];
-  payloadGa4: unknown[];
-  responseGa4: unknown[];
+  payloadMeta: Json[];
+  responseMeta: Json[];
+  payloadGa4: Json[];
+  responseGa4: Json[];
   status: "sent" | "partial" | "error" | "skipped";
 };
 
@@ -188,5 +189,14 @@ export async function dispatchEvent(input: DispatchInput): Promise<DispatchResul
   const status =
     allResponses.length === 0 ? "skipped" : anyFailed && anySucceeded ? "partial" : anyFailed ? "error" : "sent";
 
-  return { payloadMeta, responseMeta, payloadGa4, responseGa4, status };
+  // payload*/response* são montados a partir de dados já serializados em JSON
+  // (request/response de fetch, mensagens de erro) — sempre JSON-compatíveis
+  // em runtime, só não estruturalmente tipados como Json por vir de unknown.
+  return {
+    payloadMeta: payloadMeta as Json[],
+    responseMeta: responseMeta as Json[],
+    payloadGa4: payloadGa4 as Json[],
+    responseGa4: responseGa4 as Json[],
+    status,
+  };
 }

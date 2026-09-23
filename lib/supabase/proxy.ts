@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabasePublishableKey, getSupabaseUrl } from "./env";
 import { secureCookieOptions } from "./cookie-options";
+import type { Database } from "@/lib/types/database";
 
 /**
  * Chamado pelo proxy.ts (equivalente ao antigo middleware.ts no Next 16) em
@@ -11,7 +12,7 @@ import { secureCookieOptions } from "./cookie-options";
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
+  const supabase = createServerClient<Database>(getSupabaseUrl(), getSupabasePublishableKey(), {
     cookies: {
       getAll() {
         return request.cookies.getAll();

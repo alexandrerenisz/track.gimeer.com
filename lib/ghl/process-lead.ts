@@ -6,6 +6,9 @@ import { matchVisitor, type VisitorMatch } from "@/lib/tracking/match-visitor";
 import { hashEmail, hashPhone } from "@/lib/meta/hashing";
 import { resolveLeadFields, type GhlLeadWebhookPayload } from "./lead-webhook-schema";
 import { isMetaBotOrProxy } from "@/lib/tracking/meta-bot";
+import type { Database } from "@/lib/types/database";
+
+type VisitorUpdate = Database["public"]["Tables"]["visitors"]["Update"];
 
 export type ProcessLeadResult = {
   dispatched: boolean;
@@ -79,7 +82,7 @@ export async function processGhlLead(
   // duplicado (idempotência abaixo é só pra não redisparar pro Meta/GA4) —
   // atualizar de novo com os mesmos dados é inofensivo.
   if (match.visitor && (resolved.email || resolved.phone || resolved.fullName)) {
-    const identityPatch: Record<string, string> = {};
+    const identityPatch: VisitorUpdate = {};
     if (resolved.email) {
       identityPatch.email = resolved.email;
       identityPatch.email_hash = hashEmail(resolved.email);

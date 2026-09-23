@@ -8,6 +8,9 @@ import { generateTrckUserId } from "@/lib/tracking/trck-user-id";
 import { identifySchema } from "@/lib/validation/tracking-schemas";
 import { hashEmail, hashPhone } from "@/lib/meta/hashing";
 import { isMetaBotOrProxy } from "@/lib/tracking/meta-bot";
+import type { Database } from "@/lib/types/database";
+
+type VisitorUpsert = Database["public"]["Tables"]["visitors"]["Update"];
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPreflight(request);
@@ -86,9 +89,11 @@ export async function POST(request: NextRequest) {
   };
 
   // só sobrescreve com valores presentes — preserva o que já tinha
-  const patch: Record<string, unknown> = { last_seen_at: now, updated_at: now };
+  const patch: VisitorUpsert = { last_seen_at: now, updated_at: now };
   for (const [key, value] of Object.entries(incoming)) {
-    if (value !== undefined && value !== null && value !== "") patch[key] = value;
+    if (value !== undefined && value !== null && value !== "") {
+      (patch as Record<string, unknown>)[key] = value;
+    }
   }
   if (input.email) patch.email_hash = hashEmail(input.email);
   if (input.phone) patch.phone_hash = hashPhone(input.phone);

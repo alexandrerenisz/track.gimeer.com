@@ -6,6 +6,9 @@ import { dispatchEvent } from "@/lib/tracking/dispatch-event";
 import { matchVisitor, type VisitorMatch } from "@/lib/tracking/match-visitor";
 import { resolvePurchaseFields, type GhlPurchaseWebhookPayload } from "./purchase-webhook-schema";
 import { isMetaBotOrProxy } from "@/lib/tracking/meta-bot";
+import type { Database, Json } from "@/lib/types/database";
+
+type VisitorUpdate = Database["public"]["Tables"]["visitors"]["Update"];
 
 export type ProcessPurchaseResult = {
   purchaseId: string;
@@ -88,7 +91,7 @@ export async function processGhlPurchase(
   // sobrescreve nome/email/telefone do visitante quando presente — o dado da
   // compra confirmada é, se algo, o mais confiável de todos.
   if (match.visitor && (resolved.email || resolved.phone || resolved.fullName)) {
-    const identityPatch: Record<string, string> = {};
+    const identityPatch: VisitorUpdate = {};
     if (resolved.email) {
       identityPatch.email = resolved.email;
       identityPatch.email_hash = hashEmail(resolved.email);
@@ -139,7 +142,7 @@ export async function processGhlPurchase(
       ga_session_id: match.visitor?.ga_session_id ?? null,
       fbp: match.visitor?.fbp ?? null,
       fbc: match.visitor?.fbc ?? null,
-      raw_payload: rawPayload,
+      raw_payload: rawPayload as Json,
       confirmed_at: new Date().toISOString(),
     })
     .select("id")

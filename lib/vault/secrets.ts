@@ -10,7 +10,7 @@ export async function createSecret(value: string, name?: string): Promise<string
   const admin = createAdminClient();
   const { data, error } = await admin.rpc("create_secret", {
     secret_value: value,
-    secret_name: name ?? null,
+    secret_name: name,
   });
   if (error) throw new Error(`Falha ao criar segredo no Vault: ${error.message}`);
   return data as string;
